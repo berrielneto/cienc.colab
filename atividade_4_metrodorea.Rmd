@@ -5,19 +5,22 @@ date: "03/10/2021"
 output: html_document
 ---
 
-Carregando os pacotes que serão utilizados:
-
-```{r, warning=FALSE, message=FALSE}
-library(tidyverse)
-library(rgbif)
-library(magrittr)
-```
-
 A espécie escolhida para esta atividade foi a <font color = green>*Metrodorea nigra* A.St.-Hil.</font>. Uma espécie arbórea, decídua, endêmica do Brasil e de ocorrência registrada entre os estados do Maranhão e Paraná, contudo mais associada a Mata Atlântica (Flora do Brasil, 2021). [^1]
 
 [^1]: Pirani, J.R.; Groppo, M. 2020. Rutaceae in Flora do Brasil 2020. Jardim Botânico do Rio de Janeiro.Disponível em: <http://reflora.jbrj.gov.br/reflora/floradobrasil/FB819>. Acesso em: 03 out. 2021
 
 ![Distribuição da *M. nigra*](C:/R/ciencolab_banco-dados/cienc.colab/cienc.colab/mapa_m_nigra.jpg)
+
+
+Vamos carregar os pacotes que serão utilizados: ``tidyverse``, ``rgbif``
+
+```{r pacotes 1, echo=FALSE}
+library(tidyverse)
+library(rgbif)
+library(magrittr)
+
+#warning=FALSE, message=FALSE
+```
 
 A seguir, vamos utilizar a função `occ_data`, disponível no pacote `rgbif`, para selecionar os dados da *M. nigra* que serão utilizados.
 
