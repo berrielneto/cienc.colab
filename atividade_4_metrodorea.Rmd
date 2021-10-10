@@ -12,14 +12,12 @@ A espécie escolhida para esta atividade foi a <font color = green>*Metrodorea n
 ![Distribuição da *M. nigra*](C:/R/ciencolab_banco-dados/cienc.colab/cienc.colab/mapa_m_nigra.jpg)
 
 
-Vamos carregar os pacotes que serão utilizados: ``tidyverse``, ``rgbif``
+Vamos carregar os pacotes que serão utilizados: `tidyverse`, `rgbif`e `magrittr`.
 
-```{r pacotes 1, echo=FALSE}
+```{r pacotes 1, warning=FALSE, message=FALSE}
 library(tidyverse)
 library(rgbif)
 library(magrittr)
-
-#warning=FALSE, message=FALSE
 ```
 
 A seguir, vamos utilizar a função `occ_data`, disponível no pacote `rgbif`, para selecionar os dados da *M. nigra* que serão utilizados.
@@ -41,17 +39,22 @@ Aqui vamos checar os campos de dados disponíveis para a espécie e assim seleci
 M.nigra_gbif$data %>% names
 ```
 
-Desta forma iremos criar um novo objeto com os campos de maior interesse para a *M. nigra*.
+Desta forma iremos criar um novo objeto com as variáveis de maior interesse para a *M. nigra*.
 
 ```{r}
 M.nigra_gbif1 <- M.nigra_gbif$data %>%
   dplyr::select(scientificName, acceptedScientificName, decimalLatitude, decimalLongitude,
-                issues,elevation, basisOfRecord, occurrenceStatus, rightsHolder, 
+                issues,elevation, basisOfRecord, rightsHolder, 
                 datasetName, recordedBy, locality, stateProvince,county, habitat) 
 
 M.nigra_gbif1
 ```
 
+Aqui podemos ver os resultados levantados para cada variável. 
+```{r}
+lapply(M.nigra_gbif1, unique)
+
+```
 
 Precisamos checar os problemas que são suspeitos de conter erros mais aparentes. Por se tratar de uma espécie arbórea, vamos inicialmente checar o habitat.
 
@@ -61,32 +64,34 @@ M.nigra_gbif1 %>%
   pull()
 ```
 
-```{r}
+Agora, vamos checar as variáveis apresentadas, pois como vimos na função anterior, muitas das variáveis possuem **NA**'s em seus resultados. Assim, tentaremos filtrar alguns resultados para reduzir os erros, como espécimes que estejam em coleções.
+
+```{r Habitat - checagem das variáveis}
 M.nigra_gbif1 %>%
   group_by(habitat) %>% 
   summarise(occ = length(scientificName)) %>% 
   ggplot(aes(occ, y=habitat)) +
   geom_bar(stat = 'identity') 
 ```
-
-```{r}
+ Como visto no gráfico acima, existe um grande número de **NA**'s para a variável habitat. Entretanto, uma das fontes de dados para a vaiável habitat consta como uma coleção de madeira. Vamos então checar e retirar e essa fonte.
+```{r checagem da coleção de madeira em Habitat1}
 # fonte na coleção de madeira
 M.nigra_gbif1 %>% 
   filter(habitat %in% c("ColeÃ§ao de madeira.")) %>% 
-  distinct(datasetName)
+  distinct(habitat)
 ```
 
 
-```{r}
+```{r checagem da coleção de madeira em Habitat2}
 M.nigra_gbif1 %>% 
-  filter(datasetName %in% c("Vascular plants"))
+  filter(habitat %in% c("ColeÃ§ao de madeira."))
 ```
 
 
-```{r}
+```{r checagem da coleção de madeira em Habitat3}
 # filtrar todas do dataset suspeito
 M.nigra_gbif_ok <- M.nigra_gbif1 %>% 
-  filter(!datasetName %in% c("Vascular plants"))
+  filter(!habitat %in% c("ColeÃ§ao de madeira."))
 ```
 
 ```{r}
@@ -98,6 +103,16 @@ M.nigra_gbif_ok %>%
   ggplot(aes(occ, y=habitat)) +
   geom_bar(stat = 'identity') 
 ```
+ - - -
+Vamos agora repetir o processo para outras variáveis.
+
+
+
+
+
+
+
+- - -
 
 Carregando mais pacotes para a atividade
 ```{r}
