@@ -11,10 +11,9 @@ A espécie escolhida para esta atividade foi a <font color = green>*Metrodorea n
 
 ![Distribuição da *M. nigra*](C:/R/ciencolab_banco-dados/cienc.colab/cienc.colab/mapa_m_nigra.jpg)
 
-
 Vamos carregar os pacotes que serão utilizados: `tidyverse`, `rgbif`e `magrittr`.
 
-```{r pacotes 1, warning=FALSE, message=FALSE}
+```{r pacotes 1, echo=F, warning=FALSE, message=FALSE}
 library(tidyverse)
 library(rgbif)
 library(magrittr)
@@ -35,6 +34,7 @@ dim(M.nigra_gbif$data)
 ```
 
 Aqui vamos checar os campos de dados disponíveis para a espécie e assim selecionar as mais adequadas.
+
 ```{r}
 M.nigra_gbif$data %>% names
 ```
@@ -50,7 +50,8 @@ M.nigra_gbif1 <- M.nigra_gbif$data %>%
 M.nigra_gbif1
 ```
 
-Aqui podemos ver os resultados levantados para cada variável. 
+Aqui podemos ver os resultados levantados para cada variável.
+
 ```{r}
 lapply(M.nigra_gbif1, unique)
 
@@ -73,7 +74,9 @@ M.nigra_gbif1 %>%
   ggplot(aes(occ, y=habitat)) +
   geom_bar(stat = 'identity') 
 ```
- Como visto no gráfico acima, existe um grande número de **NA**'s para a variável habitat. Entretanto, uma das fontes de dados para a vaiável habitat consta como uma coleção de madeira. Vamos então checar e retirar e essa fonte.
+
+Como visto no gráfico acima, existe um grande número de **NA**'s para a variável habitat. Entretanto, uma das fontes de dados para a vaiável habitat consta como uma coleção de madeira. Vamos então checar e retirar e essa fonte.
+
 ```{r checagem da coleção de madeira em Habitat1}
 # fonte na coleção de madeira
 M.nigra_gbif1 %>% 
@@ -81,12 +84,10 @@ M.nigra_gbif1 %>%
   distinct(habitat)
 ```
 
-
 ```{r checagem da coleção de madeira em Habitat2}
 M.nigra_gbif1 %>% 
   filter(habitat %in% c("ColeÃ§ao de madeira."))
 ```
-
 
 ```{r checagem da coleção de madeira em Habitat3}
 # filtrar todas do dataset suspeito
@@ -103,34 +104,54 @@ M.nigra_gbif_ok %>%
   ggplot(aes(occ, y=habitat)) +
   geom_bar(stat = 'identity') 
 ```
- - - -
-Vamos agora repetir o processo para outras variáveis.
 
+Agora vamos fazer o procedimento para outras variáveis, como `stateProvince`, `elevation`. Que aparesentam valores que geram desconfiança, como: Rondônia (relacionado a uma coleção de madeira) e -4999.5 (que aparece mesmo em locais corretos de coleta).
 
-
-
-
-
-
-- - -
-
-Carregando mais pacotes para a atividade
 ```{r}
+################ stateProvince ###################
+
+M.nigra_gbif1 %>% 
+  filter(stateProvince %in% c("Rondônia")) %>% 
+  distinct(stateProvince)
+
+M.nigra_gbif1 %>% 
+  filter(stateProvince %in% c("Rondônia"))
+
+M.nigra_gbif_ok <- M.nigra_gbif1 %>% 
+  filter(!stateProvince %in% c("Rondônia"))
+##################################################
+
+################ elevation #######################
+
+M.nigra_gbif1 %>% 
+  filter(elevation %in% c("-4999.5")) %>% 
+  distinct(elevation)
+
+M.nigra_gbif1 %>% 
+  filter(elevation %in% c("-4999.5"))
+
+M.nigra_gbif_ok <- M.nigra_gbif1 %>% 
+  filter(!elevation %in% c("-4999.5"))
+##################################################
+```
+
+
+Agora serão carregados novos pacotes para a criação dos mapas. Os pacotes são: `ggmap`, `maps` e `mapdata`.
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
 library(ggmap)
 library(maps)
 library(mapdata)
 ```
 
+Por se tratar de uma espécie endêmica, vamos carregar somente o Brasil.
 ```{r}
 brasil <- map_data('world',region="Brazil")
 
 ```
 
-
-
+Criando com os pontos amostrados.
 ```{r}
- #checar pontos
-
 ggplot() +
   geom_polygon(data = brasil, aes(x = long, y = lat, group = group)) +
   coord_fixed() +
@@ -139,16 +160,16 @@ ggplot() +
   labs(x = "longitude", y = "latitude", title = expression(italic("Metrodorea nigra")))
 ```
 
-usando as funções q estão na parte OBIS da atividade
-
-```{r}
+Vamos utilizar agora os pacotes `CoordinateCleaner`e `biogeo`para a criação de um novo mapa, revelando agora os pontos que podem ser outlier.
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
 library(CoordinateCleaner)
 #library(obistools)
 #library(scrubr)
 library(biogeo)
 ```
 
-```{r função flag outlier}
+Para isso utilizamentos a função flag outlier, do prof. Cesar .
+```{r função flag outlier, echo=FALSE}
 flag_outlier <- function(df, species){
   
   # funcao para classificar ocorrencias suspeitas
@@ -180,17 +201,15 @@ flag_outlier <- function(df, species){
 
 ```
 
+```{r, results='hide', message=FALSE}
 
-```{r}
- marcados <- M.nigra_gbif$data %>% 
+marcados <- M.nigra_gbif$data %>% 
   data.frame() %>% 
   dplyr::select(scientificName, decimalLongitude, decimalLatitude, datasetName) %>% 
   distinct() %>% 
   flag_outlier(., "Metrodorea nigra A.St.-Hil.")
 
 ```
-
-
 
 ```{r}
 # mapa
@@ -205,7 +224,3 @@ ggplot() +
   labs(x = "longitude", y = "latitude", 
        title = expression(italic("Metrodorea nigra")))
 ```
-
-
-
-
