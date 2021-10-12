@@ -1,0 +1,228 @@
+---
+title: "Criando o R Markdown da atividade 3"
+author: "Nilson Berriel"
+date: "03/10/2021"
+output: html_document
+---
+
+A espécie escolhida para esta atividade foi a <font color = green>*Metrodorea nigra* A.St.-Hil.</font>. Uma espécie arbórea, decídua, endêmica do Brasil e de ocorrência registrada entre os estados do Maranhão e Paraná, contudo mais associada a Mata Atlântica (Flora do Brasil, 2021). [^1]
+
+[^1]: Pirani, J.R.; Groppo, M. 2020. Rutaceae in Flora do Brasil 2020. Jardim Botânico do Rio de Janeiro.Disponível em: <http://reflora.jbrj.gov.br/reflora/floradobrasil/FB819>. Acesso em: 03 out. 2021
+
+![Distribuição da *M. nigra*](C:/R/ciencolab_banco-dados/cienc.colab/cienc.colab/mapa_m_nigra.jpg)
+
+Vamos carregar os pacotes que serão utilizados: `tidyverse`, `rgbif`e `magrittr`.
+
+```{r pacotes 1, echo=F, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(rgbif)
+library(magrittr)
+```
+
+A seguir, vamos utilizar a função `occ_data`, disponível no pacote `rgbif`, para selecionar os dados da *M. nigra* que serão utilizados.
+
+```{r}
+M.nigra_gbif <- occ_data(scientificName = "Metrodorea nigra", 
+                      hasCoordinate = TRUE,
+                      hasGeospatialIssue=FALSE)
+```
+
+Agora vamos checar as dimenões dos dados encontrados:
+
+```{r}
+dim(M.nigra_gbif$data)
+```
+
+Aqui vamos checar os campos de dados disponíveis para a espécie e assim selecionar as mais adequadas.
+
+```{r}
+M.nigra_gbif$data %>% names
+```
+
+Desta forma iremos criar um novo objeto com as variáveis de maior interesse para a *M. nigra*.
+
+```{r}
+M.nigra_gbif1 <- M.nigra_gbif$data %>%
+  dplyr::select(scientificName, acceptedScientificName, decimalLatitude, decimalLongitude,
+                issues,elevation, basisOfRecord, rightsHolder, 
+                datasetName, recordedBy, locality, stateProvince,county, habitat) 
+
+M.nigra_gbif1
+```
+
+Aqui podemos ver os resultados levantados para cada variável.
+
+```{r}
+lapply(M.nigra_gbif1, unique)
+
+```
+
+Precisamos checar os problemas que são suspeitos de conter erros mais aparentes. Por se tratar de uma espécie arbórea, vamos inicialmente checar o habitat.
+
+```{r}
+M.nigra_gbif1 %>%
+  distinct(habitat) %>%
+  pull()
+```
+
+Agora, vamos checar as variáveis apresentadas, pois como vimos na função anterior, muitas das variáveis possuem **NA**'s em seus resultados. Assim, tentaremos filtrar alguns resultados para reduzir os erros, como espécimes que estejam em coleções.
+
+```{r Habitat - checagem das variáveis}
+M.nigra_gbif1 %>%
+  group_by(habitat) %>% 
+  summarise(occ = length(scientificName)) %>% 
+  ggplot(aes(occ, y=habitat)) +
+  geom_bar(stat = 'identity') 
+```
+
+Como visto no gráfico acima, existe um grande número de **NA**'s para a variável habitat. Entretanto, uma das fontes de dados para a vaiável habitat consta como uma coleção de madeira. Vamos então checar e retirar e essa fonte.
+
+```{r checagem da coleção de madeira em Habitat1}
+# fonte na coleção de madeira
+M.nigra_gbif1 %>% 
+  filter(habitat %in% c("ColeÃ§ao de madeira.")) %>% 
+  distinct(habitat)
+```
+
+```{r checagem da coleção de madeira em Habitat2}
+M.nigra_gbif1 %>% 
+  filter(habitat %in% c("ColeÃ§ao de madeira."))
+```
+
+```{r checagem da coleção de madeira em Habitat3}
+# filtrar todas do dataset suspeito
+M.nigra_gbif_ok <- M.nigra_gbif1 %>% 
+  filter(!habitat %in% c("ColeÃ§ao de madeira."))
+```
+
+```{r}
+#checando #rever o filtro q fiz, acredito q deu errado
+
+M.nigra_gbif_ok %>%
+  group_by(habitat) %>% 
+  summarise(occ = length(scientificName)) %>% 
+  ggplot(aes(occ, y=habitat)) +
+  geom_bar(stat = 'identity') 
+```
+
+Agora vamos fazer o procedimento para outras variáveis, como `stateProvince`, `elevation`. Que aparesentam valores que geram desconfiança, como: Rondônia (relacionado a uma coleção de madeira) e -4999.5 (que aparece mesmo em locais corretos de coleta).
+
+```{r}
+################ stateProvince ###################
+
+M.nigra_gbif1 %>% 
+  filter(stateProvince %in% c("Rondônia")) %>% 
+  distinct(stateProvince)
+
+M.nigra_gbif1 %>% 
+  filter(stateProvince %in% c("Rondônia"))
+
+M.nigra_gbif_ok <- M.nigra_gbif1 %>% 
+  filter(!stateProvince %in% c("Rondônia"))
+##################################################
+
+################ elevation #######################
+
+M.nigra_gbif1 %>% 
+  filter(elevation %in% c("-4999.5")) %>% 
+  distinct(elevation)
+
+M.nigra_gbif1 %>% 
+  filter(elevation %in% c("-4999.5"))
+
+M.nigra_gbif_ok <- M.nigra_gbif1 %>% 
+  filter(!elevation %in% c("-4999.5"))
+##################################################
+```
+
+
+Agora serão carregados novos pacotes para a criação dos mapas. Os pacotes são: `ggmap`, `maps` e `mapdata`.
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(ggmap)
+library(maps)
+library(mapdata)
+```
+
+Por se tratar de uma espécie endêmica, vamos carregar somente o Brasil.
+```{r}
+brasil <- map_data('world',region="Brazil")
+
+```
+
+Criando com os pontos amostrados.
+```{r}
+ggplot() +
+  geom_polygon(data = brasil, aes(x = long, y = lat, group = group)) +
+  coord_fixed() +
+  theme_classic() +
+  geom_point(data = M.nigra_gbif_ok, aes(x = decimalLongitude, y = decimalLatitude), color = "red") +
+  labs(x = "longitude", y = "latitude", title = expression(italic("Metrodorea nigra")))
+```
+
+Vamos utilizar agora os pacotes `CoordinateCleaner`e `biogeo`para a criação de um novo mapa, revelando agora os pontos que podem ser outlier.
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(CoordinateCleaner)
+#library(obistools)
+#library(scrubr)
+library(biogeo)
+```
+
+Para isso utilizamentos a função `flag outlier`, do prof. Cesar .
+```{r função flag outlier, echo=FALSE}
+flag_outlier <- function(df, species){
+  
+  # funcao para classificar ocorrencias suspeitas
+  # baseada no calculo do centroide de todas ocorrencias
+  # indica como 'check' as ocorrencias que tem distancias até o centroide
+  # acima do 90th quantil (default) das distancias calculadas
+  
+  dados <- df %>% 
+    dplyr::filter(scientificName == species); 
+  
+  dados2 <- geosphere::distVincentyEllipsoid(
+    dados %>%
+      summarise(centr_lon = median(decimalLongitude),
+                centr_lat = median(decimalLatitude)),
+    dados %>% 
+      dplyr::select(decimalLongitude, decimalLatitude)
+  ) %>% 
+    bind_cols(dados) %>% 
+    rename(dist_centroid = '...1') %>% 
+    mutate(flag = ifelse(dist_centroid < quantile(dist_centroid, probs = 0.9), "OK",
+                         ifelse(dist_centroid >= quantile(dist_centroid, probs = 0.90) & dist_centroid < quantile(dist_centroid, probs = 0.95), "check > Q90",
+                                ifelse(dist_centroid >= quantile(dist_centroid, probs = 0.95), "check > Q95", "OK"))))
+  
+    # mutate(flag = ifelse(dist_centroid > quantile(dist_centroid, probs = prob), "check", "OK"))
+  
+  print(dados2)
+  
+}
+
+```
+
+Selecionando as variáveis para aplicarmos a função `flag outlier`.
+```{r, results='hide', message=FALSE}
+
+marcados <- M.nigra_gbif$data %>% 
+  data.frame() %>% 
+  dplyr::select(scientificName, decimalLongitude, decimalLatitude, datasetName) %>% 
+  distinct() %>% 
+  flag_outlier(., "Metrodorea nigra A.St.-Hil.")
+
+```
+
+
+Criando o mapa com a função `flag outlier`.
+```{r}
+ggplot() +
+  geom_polygon(data = brasil, aes(x = long, y = lat, group = group)) +
+  coord_fixed() +
+  theme_classic() +
+  geom_point(data = marcados, 
+             aes(x = decimalLongitude, y = decimalLatitude, 
+                 color = flag)) +
+  theme(legend.title = element_blank()) +
+  labs(x = "longitude", y = "latitude", 
+       title = expression(italic("Metrodorea nigra")))
+```
