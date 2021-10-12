@@ -168,7 +168,7 @@ library(CoordinateCleaner)
 library(biogeo)
 ```
 
-Para isso utilizamentos a função flag outlier, do prof. Cesar .
+Para isso utilizamentos a função `flag outlier`, do prof. Cesar .
 ```{r função flag outlier, echo=FALSE}
 flag_outlier <- function(df, species){
   
@@ -201,6 +201,7 @@ flag_outlier <- function(df, species){
 
 ```
 
+Selecionando as variáveis para aplicarmos a função `flag outlier`.
 ```{r, results='hide', message=FALSE}
 
 marcados <- M.nigra_gbif$data %>% 
@@ -211,8 +212,9 @@ marcados <- M.nigra_gbif$data %>%
 
 ```
 
+
+Criando o mapa com a função `flag outlier`.
 ```{r}
-# mapa
 ggplot() +
   geom_polygon(data = brasil, aes(x = long, y = lat, group = group)) +
   coord_fixed() +
