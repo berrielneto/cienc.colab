@@ -5,7 +5,7 @@ date: "03/10/2021"
 output: html_document
 ---
 
-A espécie escolhida para esta atividade foi a <font color = green>*Metrodorea nigra* A.St.-Hil.</font>. Uma espécie arbórea, decídua, endêmica do Brasil e de ocorrência registrada entre os estados do Maranhão e Paraná, contudo mais associada a Mata Atlântica (Flora do Brasil, 2021). [^1]
+A espécie escolhida para esta atividade foi a <font color = green>*Metrodorea nigra* A.St.-Hil.</font>. Uma espécie arbórea, decídua, endêmica do Brasil e de ocorrência registrada entre os estados do Maranhão e Paraná, contudo mais associada a Mata Atlântica. [^1]
 
 [^1]: Pirani, J.R.; Groppo, M. 2020. Rutaceae in Flora do Brasil 2020. Jardim Botânico do Rio de Janeiro.Disponível em: <http://reflora.jbrj.gov.br/reflora/floradobrasil/FB819>. Acesso em: 03 out. 2021
 
@@ -168,7 +168,7 @@ library(CoordinateCleaner)
 library(biogeo)
 ```
 
-Para isso utilizamentos a função `flag outlier`, do prof. Cesar .
+Para isso utilizamentos a função `flag outlier`, do [prof. Cesar](https://github.com/cammcordeiro/ciencia_colab/blob/main/functions/aux_functions.R).
 ```{r função flag outlier, echo=FALSE}
 flag_outlier <- function(df, species){
   
